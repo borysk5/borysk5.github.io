@@ -1,29 +1,31 @@
 <!DOCTYPE HTML>
 <html>
 
-  <head>
+<head>
     <style>
-      body {
-        margin: 0px;
-        padding: 0px;
-      }
-
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+        table, th, td {
+  border:1px solid black;
+}
     </style>
-  </head>
+</head>
 
-  <body>
-	  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <div id="canvases"></div>
     <canvas id="myCanvas" hidden></canvas>
     <br>
     <b>First step:</b> Upload one file to overlay on top of the other (must contain transparency)
     <form>
-      <input accept="image/*" type='file' id="pattern" multiple></input>
+        <input accept="image/*" type='file' id="pattern" multiple></input>
     </form>
-    <img id="pat" src="#" alt="your image" /><br>
+    <img id="pat" width="200" src="https://upload.wikimedia.org/wikipedia/commons/3/38/Solid_white_bordered.png" alt="your image" /><br>
     <b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)
     <form>
-      <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
+        <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
     </form>
     <b>Third step:</b> Click this button to process images: <button onclick="doThis()">Process images</button><br>
 
@@ -31,144 +33,110 @@
       <button>Download all images</button>
     </a>
 
-    <div id="tabBar"></div>
-    <img id="blah" src="#" alt="your image" />
+    <table id="tabBar"></table>
 
     <script>
-    	var tempblob;
-      var images = 0;
-      var imageObj = new Image();
-      var imageObj2 = new Image();
+	var files;
+        var images = 0;
+        var imageObj = new Image();
+        var imageObj2 = new Image();
 
-      function doThis() {
-        var firstc = document.getElementById("myCanvas");
-        imageObj2.src = document.getElementById('pat').src;
-        firstc.width = imageObj2.width;
-        firstc.height = imageObj2.height;
-        var firstx = firstc.getContext('2d');
-        firstx.drawImage(imageObj2, 0, 0);
-        var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
-
-        var photo = document.getElementById('tabBar');
-        for (var i = 0; i < images; i++) {
-          imageObj.src = photo.children[i * 2].src;
-          var canwes = document.getElementById('canvases');
-          var canvas = canwes.children[i];
-          canvas.width = imageObj.width;
-          canvas.height = imageObj.height;
-          var context = canvas.getContext('2d');
-          context.drawImage(imageObj, 0, 0);
-          var imageData = context.getImageData(0, 0, imageObj.width, imageObj.height);
-
-          var data = imageData.data;
-          for (var j = 0, n = imageData.data.length; j < n; j += 4) {
-            if (imageData2.data[j + 3] > 0) {
-              imageData.data[j] = imageData2.data[j];
-              imageData.data[j + 1] = imageData2.data[j + 1];
-              imageData.data[j + 2] = imageData2.data[j + 2];
-              imageData.data[j + 3] = imageData2.data[j + 3];
+        function doThis() {
+            var firstc = document.getElementById("myCanvas");
+            imageObj2.src = document.getElementById('pat').src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+            var photo = document.getElementById('tabBar');
+            for (var i = 0; i < images; i++) {
+                imageObj.src = document.getElementById("bruh"+i).src;
+		if(imageObj.width!=imageObj2.width || imageObj.height!=imageObj2.height){
+		alert("Error: One of provided images has different dimensions than pattern image");
+		return;
+//
+		};
+                var canwes = document.getElementById('canvases');
+                var canvas = canwes.children[i];
+                canvas.width = imageObj.width;
+                canvas.height = imageObj.height;
+                var context = canvas.getContext('2d');
+                context.drawImage(imageObj, 0, 0);
+                var imageData = context.getImageData(0, 0, imageObj.width, imageObj.height);
+                var data = imageData.data;
+                for (var j = 0, n = imageData.data.length; j < n; j += 4) {
+                    if (imageData2.data[j + 3] > 0) {
+                        imageData.data[j] = imageData2.data[j];
+                        imageData.data[j + 1] = imageData2.data[j + 1];
+                        imageData.data[j + 2] = imageData2.data[j + 2];
+                        imageData.data[j + 3] = imageData2.data[j + 3];
+                    }
+                }
+                //imageData.data = data;
+                context.putImageData(imageData, 0, 0);
+                document.getElementById("bruh"+i).src = canvas.toDataURL();
             }
-          }
+            document.getElementById('zip').hidden = false;
+            var zip = new JSZip();
+            for (var w = 0; w < images; w++) {
+                var t = getCanvasBlob(document.getElementById('canvases').children[w]);
+                zip.file(String(files[w].name), t);
+            }
 
-          //imageData.data = data;
-          context.putImageData(imageData, 0, 0);
-          photo.children[i * 2 + 1].href = canvas.toDataURL();
-          photo.children[i * 2].src = canvas.toDataURL();
+
+            zip.generateAsync({
+                type: "base64"
+            }).then(function(content) {
+                document.getElementById("zip").href = "data:application/zip;base64," + content;
+
+            });
+
         }
-        document.getElementById('zip').hidden = false;
-        var zip = new JSZip();
-        for(var w=0;w<images;w++){
-        var t = getCanvasBlob(document.getElementById('canvases').children[w]);
-        zip.file(String(photo.children[w * 2 + 1].download), t);
-        }
-       
-				
-        zip.generateAsync({
-          type: "base64"
-        }).then(function(content) {
-          document.getElementById("zip").href = "data:application/zip;base64," + content;
-          
-        });
 
-      }
-
-function getCanvasBlob(canvas) {
-  return new Promise(function(resolve, reject) {
-    canvas.toBlob(function(blob) {
-      resolve(blob)
-    })
-  })
-}
-
-        function dataURItoBlob( dataURI ) {
-    // Convert Base64 to raw binary data held in a string.
-
-    var byteString = atob(dataURI.split(',')[1]);
-
-    // Separate the MIME component.
-    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
-
-    // Write the bytes of the string to an ArrayBuffer.
-    var ab = new ArrayBuffer(byteString.length);
-    var ia = new Uint8Array(ab);
-    for (var i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-    }
-
-    // Write the ArrayBuffer to a BLOB and you're done.
-    var bb = new Blob([ab]);
-
-    return bb;
-}
-        
-
-      imgInp.onchange = evt => {
-        images = imgInp.files.length;
-
-
-
-        for (var i = 0; i < images; i++) {
-          var z = URL.createObjectURL(imgInp.files[i]);
-          //blah.src = z;
-          var v = document.createElement('img');
-          v.id = "bruh " + i;
-          v.src = z;
-
-
-
-
-
-          document.getElementById('tabBar').appendChild(v);
-
-          var c = document.createElement('canvas');
-          c.id = "canvas" + i;
-          c.hidden = true;
-          document.getElementById('canvases').appendChild(c);
-
-
-          var q = document.createElement('a');
-          q.id = "down" + i;
-          q.innerHTML = "<button>Downlod</button>";
-          q.download = imgInp.files[i].name;
-          q.href = z;
-          document.getElementById('tabBar').appendChild(q);
+        function getCanvasBlob(canvas) {
+            return new Promise(function(resolve, reject) {
+                canvas.toBlob(function(blob) {
+                    resolve(blob)
+                })
+            })
         }
 
 
-      }
-
-      pattern.onchange = evt => {
-        var x = URL.createObjectURL(pattern.files[0]);
-        document.getElementById('pat').src = x;
-        //blah.src = z;
+        imgInp.onchange = evt => {
+	files = imgInp.files;
+            images = imgInp.files.length;
 
 
+            var s = Math.floor(images / 10)+1;
+            for (var i = 0; i < s; i++) {
+
+                var tr = document.createElement("tr");
+                for (var j = 0; j < 10 && i*10 + j < images; j++) {
+                    var z = URL.createObjectURL(imgInp.files[i*10 + j]);
+                    var td = document.createElement("td");
+                    td.innerHTML="<img id=\"bruh"+(i*10 + j)+"\" width=\""+screen.width/11+"\" src=\""+z+"\"></img>";
+                    tr.appendChild(td);
+                    
+                    var c = document.createElement('canvas');
+                    c.id = "canvas" + i*10 + j;
+                    c.hidden = true;
+                    document.getElementById('canvases').appendChild(c);
+
+                }
+                document.getElementById('tabBar').appendChild(tr);
+
+            }
 
 
-      }
+        }
 
+        pattern.onchange = evt => {
+            var x = URL.createObjectURL(pattern.files[0]);
+            document.getElementById('pat').src = x;
+
+        }
     </script>
-  </body>
+</body>
 
 </html>
-
