@@ -18,16 +18,19 @@
     <div id="canvases"></div>
     <canvas id="myCanvas" hidden></canvas>
     <br>
-    <b>First step:</b> Upload one file to overlay on top of the other (must contain transparency)
+    <a style="overflow:hidden;font-size:30px"><b>First step:</b> Upload one file to overlay on top of the other</a>
     <form>
-        <input accept="image/*" type='file' id="pattern" multiple></input>
+        <input accept="image/*" type='file' id="pattern"></input>
     </form>
-    <img id="pat" width="200" src="https://upload.wikimedia.org/wikipedia/commons/3/38/Solid_white_bordered.png" alt="your image" /><br>
-    <b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)
+    <img id="pat" src="https://upload.wikimedia.org/wikipedia/commons/3/38/Solid_white_bordered.png" alt="your image" />    
+    <div style="display:block;position: absolute;border: 1px solid #999999;height:100px;top:80;left:0" id="selectorid"></div><br>
+    (click on the image to cut part of it and then click button below)
+    <button onclick="shrink()">Shrink the pattern photo</button><br>
+    <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
         <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
     </form>
-    <b>Third step:</b> Click this button to process images: <button onclick="doThis()">Process images</button><br>
+    <a style="font-size:30px"><b>Third step:</b> Click this button to process images:</a> <button onclick="doThis()">Process images</button><br>
 
     <a id="zip" hidden href="" download="images.zip">
       <button>Download all images</button>
@@ -40,6 +43,109 @@
         var images = 0;
         var imageObj = new Image();
         var imageObj2 = new Image();
+ var moving = false;
+        var select1x, select1y, select2x, select2y = 0;
+
+        function shrink() {
+            var rect = document.getElementById("pat").getBoundingClientRect();
+            var ratx1 = (select1x - rect.left) / rect.width;
+            var raty1 = (select1y - rect.top) / rect.height;
+
+            var ratx2 = (select2x - rect.left) / rect.width;
+            var raty2 = (select2y - rect.top) / rect.height;
+
+            var firstc = document.getElementById("myCanvas");
+            imageObj2.src = document.getElementById('pat').src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+            
+            var data = imageData2.data;
+            for(var i=0;i<imageData2.height;i++)
+            {
+                for(var j=0;j<imageData2.width;j++){
+                    if(!(i>imageData2.height*raty1 && i<imageData2.height*raty2 && j>imageData2.width*ratx1 && j<imageData2.width*ratx2)){
+                    var cod = (imageData2.width*i+j)*4;
+                    imageData2.data[cod + 0] = 0; 
+                    imageData2.data[cod + 1] = 0; 
+                    imageData2.data[cod + 2] = 0; 
+                    imageData2.data[cod + 3] = 0; 
+                    }
+                    
+                }
+            }    
+        
+               
+                //imageData.data = data;
+                firstx.putImageData(imageData2, 0, 0);
+                document.getElementById('pat').src = firstc.toDataURL();
+
+        }
+
+        document.onmousemove = function mouseEvent(e) {
+            if (moving) {
+                var width = Math.abs(e.clientX - select1x);
+                var height = Math.abs(e.clientY - select1y);
+                var selector = document.getElementById("selectorid");
+                var t = height + "px";
+                selector.style.height = t;
+                t = width + "px";
+                selector.style.width = t;
+
+                var n = String(select1x) + "px";
+                selector.style.left = n;
+                var n1 = String(select1y) + "px";
+                selector.style.top = n1;
+
+
+            }
+
+        }
+
+
+        document.onmousedown = function mousedownEvent(e) {
+            var rect = document.getElementById("pat").getBoundingClientRect();
+            if (e.clientX < rect.right && e.clientY < rect.bottom) {
+                moving = true;
+                var rect = e.target.getBoundingClientRect();
+                var height = rect.bottom - rect.top;
+                var width = rect.right - rect.left;
+                var x = e.clientX - rect.left; //x position within the element.
+                var y = e.clientY - rect.top; //y position within the element.
+                select1y = e.clientY;
+                select1x = e.clientX;
+                //var selector = $(".selector")[0];
+                var selector = document.getElementById("selectorid");
+
+                selector.style.width = "0px";
+                selector.style.height = "0px";
+
+                var n = String(rect.left) + 'px';
+                selector.style.left = n;
+                n = String(rect.top) + 'px';
+                selector.style.top = n;
+
+                selector.display = "block";
+            }
+        }
+
+        document.onmouseup = function mouseupEvent(e) {
+            var rect = document.getElementById("pat").getBoundingClientRect();
+            if (e.clientX < rect.right && e.clientY < rect.bottom) {
+
+                moving = false;
+
+                var height = rect.bottom - rect.top;
+                var width = rect.right - rect.left;
+                var x = e.clientX - rect.left; //x position within the element.
+                var y = e.clientY - rect.top; //y position within the element.
+                select2y = e.clientY;
+                select2x = e.clientX;
+            }
+
+        }
 
         function doThis() {
             var firstc = document.getElementById("myCanvas");
@@ -55,7 +161,6 @@
 		if(imageObj.width!=imageObj2.width || imageObj.height!=imageObj2.height){
 		alert("Error: One of provided images has different dimensions than pattern image");
 		return;
-//
 		};
                 var canwes = document.getElementById('canvases');
                 var canvas = canwes.children[i];
@@ -67,10 +172,11 @@
                 var data = imageData.data;
                 for (var j = 0, n = imageData.data.length; j < n; j += 4) {
                     if (imageData2.data[j + 3] > 0) {
-                        imageData.data[j] = imageData2.data[j];
-                        imageData.data[j + 1] = imageData2.data[j + 1];
-                        imageData.data[j + 2] = imageData2.data[j + 2];
-                        imageData.data[j + 3] = imageData2.data[j + 3];
+			var aB = imageData.data[j + 3];
+			imageData.data[j + 3] = imageData2.data[j + 3] + (aB * (255 - imageData2.data[j + 3]) / 255);
+			for(var e=0;e<3;e++){
+			imageData.data[j + e] = (imageData2.data[j + e] * imageData2.data[j + 3] + imageData.data[j + e] * aB * (255 - imageData2.data[j + 3]) / 255)/imageData.data[j + 3];
+			}
                     }
                 }
                 //imageData.data = data;
@@ -93,33 +199,43 @@
             });
 
         }
+	
+	
+
 
         function getCanvasBlob(canvas) {
             return new Promise(function(resolve, reject) {
                 canvas.toBlob(function(blob) {
-                    resolve(blob)
+                    resolve(blob) 
                 })
             })
         }
 
 
         imgInp.onchange = evt => {
-	files = imgInp.files;
+            if(images>0){
+                for(var f=0;f<images;f++){
+                    document.getElementById('canvases').removeChild( document.getElementById('canvases').children[0]);
+                } 
+                for(var f=0;f<Math.floor(images / 5)+1;f++){
+                    document.getElementById('tabBar').removeChild( document.getElementById('tabBar').children[0]);
+                }
+                
+            }
+	    files = imgInp.files;
             images = imgInp.files.length;
-
-
-            var s = Math.floor(images / 10)+1;
+            var s = Math.floor(images / 5)+1;
             for (var i = 0; i < s; i++) {
 
                 var tr = document.createElement("tr");
-                for (var j = 0; j < 10 && i*10 + j < images; j++) {
-                    var z = URL.createObjectURL(imgInp.files[i*10 + j]);
+                for (var j = 0; j < 5 && i*5 + j < images; j++) {
+                    var z = URL.createObjectURL(imgInp.files[i*5 + j]);
                     var td = document.createElement("td");
-                    td.innerHTML="<img id=\"bruh"+(i*10 + j)+"\" width=\""+screen.width/11+"\" src=\""+z+"\"></img>";
+                    td.innerHTML="<img id=\"bruh"+(i*5 + j)+"\" width=\""+screen.width/6+"\" src=\""+z+"\"></img>";
                     tr.appendChild(td);
                     
                     var c = document.createElement('canvas');
-                    c.id = "canvas" + i*10 + j;
+                    c.id = "canvas" + i*5 + j;
                     c.hidden = true;
                     document.getElementById('canvases').appendChild(c);
 
@@ -133,6 +249,7 @@
 
         pattern.onchange = evt => {
             var x = URL.createObjectURL(pattern.files[0]);
+	    document.getElementById('pat').width = screen.width/6;
             document.getElementById('pat').src = x;
 
         }
