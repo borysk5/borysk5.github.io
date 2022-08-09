@@ -29,7 +29,7 @@
     (click on the image to select part of it)<br>
     <button onclick="shrink()">Shrink to rectangle</button><br>
     <button onclick="remov()">Remove the rectangle</button><br>
-    <button onclick="fill()">Fill with color</button><button id="check" onclick="check()">🎨</button><br><a id="a1"/><a id="a2"/><a id="a3"/><a id="a4"/>
+    <button onclick="fill()">Fill with color</button><button id="check" onclick="ccheck()">🎨</button><br><a id="a1"/><a id="a2"/><a id="a3"/><a id="a4"/>
     <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
         <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
@@ -193,11 +193,13 @@ function componentToHex(c) {
 
         document.onmousedown = function mousedownEvent(e) {
             var rect = $("#pat")[0].getBoundingClientRect();
-		if (e.target.id=="pat"){
+		if (e.target.id=="pat" || e.target.id=="selectorid"){
+		
 	    if(filling){
-	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
-            var ratx1 = (rect1.left - rect.left) / rect.width;
-            var raty1 = (rect1.top - rect.top) / rect.height;
+	    //var rect1 = $("#selectorid")[0].getBoundingClientRect();
+            var ratx1 = (e.clientX-rect.left) / rect.width;
+            var raty1 = (e.clientY-rect.top) / rect.height;
+		
  		var firstc = $("#myCanvas")[0];
             imageObj2.src = $("#pat")[0].src;
             firstc.width = imageObj2.width;
@@ -208,12 +210,14 @@ function componentToHex(c) {
             	
 		
 		var j = (imageData2.width*Math.floor(imageData2.height*raty1)+Math.floor(ratx1*imageData2.width))*4;
-
+	
 		cr = imageData2.data[j+0];
 		cg = imageData2.data[j+1];
 		cb = imageData2.data[j+2];
 		ca = imageData2.data[j+3];
+	
 		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);
+	
 
 	    }
             else {
@@ -349,7 +353,7 @@ function componentToHex(c) {
 
 
         }
-	function check(){
+	function ccheck(){
 		filling = true;
 		$("#check")[0].style.background = "grey";
 	} 
