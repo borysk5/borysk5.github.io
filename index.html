@@ -195,9 +195,9 @@ function componentToHex(c) {
             var rect = $("#pat")[0].getBoundingClientRect();
 		if (e.target.id=="pat"){
 	    if(filling){
-		
-			var ratx1 = (e.clientX - rect.left) / rect.width;
-            		var raty1 = (e.clientY - rect.top) / rect.height;
+	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
+            var ratx1 = (rect1.left - rect.left) / rect.width;
+            var raty1 = (rect1.top - rect.top) / rect.height;
  		var firstc = $("#myCanvas")[0];
             imageObj2.src = $("#pat")[0].src;
             firstc.width = imageObj2.width;
