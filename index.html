@@ -29,7 +29,8 @@
     (click on the image to select part of it)<br>
     <button onclick="shrink()">Shrink to rectangle</button><br>
     <button onclick="remov()">Remove the rectangle</button><br>
-    <button onclick="fill()">Fill with color</button><button id="check" onclick="ccheck()">🎨</button><br><a id="a1"/><a id="a2"/><a id="a3"/><a id="a4"/>
+    <button onclick="fill()">Fill with color</button><button id="check" onclick="ccheck()">🎨</button><br>
+    <button id="change" onclick="change()">✦</button><button id="copy" onclick="copy()">⬜</button><button id="paste" onclick="paste()">⬛</button><br>
     <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
         <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
@@ -47,14 +48,26 @@
 	var cg=0;
 	var cb=0;
 	var ca=0;
+	var remx=0;
+	var remy=0;
+	var datax=[];
 	var files;
         var images = 0;
         var imageObj = new Image();
         var imageObj2 = new Image();
  	var moving = false;
+	var changing = 0;
 	var filling = false;
         var select1x, select1y, select2x, select2y = 0;
-
+	function change(){
+	if(changing==0){
+	changing=1;
+	$("#change")[0].style.background = "darkgrey";
+	}else {
+	$("#change")[0].style.background = "lightgray";
+	changing=0;
+	}
+	}
         function shrink() {
             var rect = $("#pat")[0].getBoundingClientRect();
 	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
@@ -91,6 +104,94 @@
 
         }
         
+		function copy() {
+            var rect = $("#pat")[0].getBoundingClientRect();
+	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
+            var ratx1 = (rect1.left - rect.left) / rect.width;
+            var raty1 = (rect1.top - rect.top) / rect.height;
+
+            var ratx2 = (rect1.right - rect.left) / rect.width;
+            var raty2 = (rect1.bottom - rect.top) / rect.height;
+
+	    var firstc = $("#myCanvas")[0];
+            imageObj2.src = $("#pat")[0].src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+            
+            datax = [];
+		var inc = 0;
+		remy=Math.floor(imageData2.height*raty2)-Math.floor(imageData2.height*raty1);
+		remx=Math.floor(imageData2.width*ratx2)-Math.floor(imageData2.width*ratx1);
+            for(var i=0;i<remy;i++)
+            {
+                for(var j=0;j<remx;j++){
+                   // if((i>Math.floor(imageData2.height*raty1) && i<Math.floor(imageData2.height*raty2) && j>Math.floor(imageData2.width*ratx1) && j<Math.floor(imageData2.width*ratx2))){
+                     var cod = (imageData2.width*(Math.floor(imageData2.height*raty1)+i)+j+Math.floor(imageData2.width*ratx1))*4;
+                    datax[inc + 0]=imageData2.data[cod + 0]; 
+                    datax[inc+1]=imageData2.data[cod + 1]; 
+                    datax[inc+2]=imageData2.data[cod + 2]; 
+                    datax[inc+3]=imageData2.data[cod + 3]; 
+			inc+=4;
+                 //   }
+                    
+                }
+            } 
+		
+		
+		//alert(remy+' '+remx);
+		   
+	}
+
+
+
+
+function paste() {
+            var rect = $("#pat")[0].getBoundingClientRect();
+	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
+            var ratx1 = (rect1.left - rect.left) / rect.width;
+            var raty1 = (rect1.top - rect.top) / rect.height;
+
+            var ratx2 = (rect1.right - rect.left) / rect.width;
+            var raty2 = (rect1.bottom - rect.top) / rect.height;
+
+	    var firstc = $("#myCanvas")[0];
+            imageObj2.src = $("#pat")[0].src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+
+     		var inc = 0;
+
+            for(var i=0;i<remy;i++)
+            {
+                for(var j=0;j<remx;j++){
+
+                  //  if((i>Math.floor(imageData2.height*raty1) && i<Math.floor(imageData2.height*raty2) && j>Math.floor(imageData2.width*ratx1) && j<Math.floor(imageData2.width*ratx2))){
+                    var cod = (imageData2.width*(Math.floor(imageData2.height*raty1)+i)+j+Math.floor(imageData2.width*ratx1))*4;
+
+                    imageData2.data[cod + 0]=datax[inc + 0]; 
+
+                    imageData2.data[cod + 1]=datax[inc + 1]; 
+                    imageData2.data[cod + 2]=datax[inc + 2]; 
+                    imageData2.data[cod + 3]=datax[inc + 3]; 
+			inc+=4;
+
+                   // }
+                    
+                }
+            } 
+
+		firstx.putImageData(imageData2, 0, 0);
+                $("#pat")[0].src = firstc.toDataURL();    
+	}
+
+
+
                 function remov() {
             var rect = $("#pat")[0].getBoundingClientRect();
 	    var rect1 = $("#selectorid")[0].getBoundingClientRect();
@@ -108,17 +209,16 @@
             firstx.drawImage(imageObj2, 0, 0);
             var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
             
-            var data = imageData2.data;
-            for(var i=0;i<imageData2.height;i++)
+            for(var i=Math.floor(imageData2.height*raty1);i<Math.floor(imageData2.height*raty2);i++)
             {
-                for(var j=0;j<imageData2.width;j++){
-                    if((i>imageData2.height*raty1 && i<imageData2.height*raty2 && j>imageData2.width*ratx1 && j<imageData2.width*ratx2)){
+                for(var j=Math.floor(imageData2.width*ratx1);j<Math.floor(imageData2.width*ratx2);j++){
+
                     var cod = (imageData2.width*i+j)*4;
                     imageData2.data[cod + 0] = 0; 
                     imageData2.data[cod + 1] = 0; 
                     imageData2.data[cod + 2] = 0; 
                     imageData2.data[cod + 3] = 0; 
-                    }
+                    
                     
                 }
             }    
@@ -146,16 +246,14 @@ function fill() {
             var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
             
             var data = imageData2.data;
-            for(var i=0;i<imageData2.height;i++)
+            for(var i=Math.floor(imageData2.height*raty1);i<Math.floor(imageData2.height*raty2);i++)
             {
-                for(var j=0;j<imageData2.width;j++){
-                    if((i>imageData2.height*raty1 && i<imageData2.height*raty2 && j>imageData2.width*ratx1 && j<imageData2.width*ratx2)){
+                for(var j=Math.floor(imageData2.width*ratx1);j<Math.floor(imageData2.width*ratx2);j++){
                     var cod = (imageData2.width*i+j)*4;
                     imageData2.data[cod + 0] = cr; 
                     imageData2.data[cod + 1] = cg; 
                     imageData2.data[cod + 2] = cb; 
                     imageData2.data[cod + 3] = ca; 
-                    }
                     
                 }
             }    
@@ -165,8 +263,19 @@ function fill() {
         }
 
         document.onmousemove = function mouseEvent(e) {
-            if (!filling && moving) {
 		var rect = $("#pat")[0].getBoundingClientRect();
+	    if( (e.target.id=="selectorid" || e.target.id=="pat") && changing==2){
+		var selector = $("#selectorid")[0];
+		//alert(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX);
+		if(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX<rect.right && parseInt(selector.style.top,10)+parseInt(selector.style.height,10)+e.movementY<rect.bottom && parseInt(selector.style.top,10)+e.movementY>rect.top && parseInt(selector.style.left,10)+e.movementX>rect.left)
+		{
+                var n = parseInt(selector.style.left,10)+e.movementX + "px";
+                selector.style.left = n;
+                var n1 = parseInt(selector.style.top,10)+e.movementY + "px";
+                selector.style.top = n1;	
+		}	
+            }
+            else if (!filling && moving && (e.target.id=="pat" || e.target.id=="selectorid")) {
                 var width = Math.abs(e.clientX - select1x - rect.left);
                 var height = Math.abs(e.clientY - select1y - rect.top);
 		
@@ -194,8 +303,8 @@ function componentToHex(c) {
         document.onmousedown = function mousedownEvent(e) {
             var rect = $("#pat")[0].getBoundingClientRect();
 		if (e.target.id=="pat" || e.target.id=="selectorid"){
-		
-	    if(filling){
+	    if(changing>0){changing=2;}	
+	    else if(filling){
 	    //var rect1 = $("#selectorid")[0].getBoundingClientRect();
             var ratx1 = (e.clientX-rect.left) / rect.width;
             var raty1 = (e.clientY-rect.top) / rect.height;
@@ -244,9 +353,10 @@ function componentToHex(c) {
 
        document.onmouseup = function mouseupEvent(e) {
             var rect = $("#pat")[0].getBoundingClientRect();
-		if(filling)
+		if(changing==2){changing=1;}
+		else if(filling)
 		{filling = false;}
-            else if (e.clientX < rect.right && e.clientY < rect.bottom) {
+            else if (moving==true) {
 
                 moving = false;
 
