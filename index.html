@@ -59,6 +59,9 @@
 	var changing = 0;
 	var filling = false;
         var select1x, select1y, select2x, select2y = 0;
+	var pressedKeys = {};
+	window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
+	window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
 	function change(){
 	if(changing==0){
 	changing=1;
@@ -450,7 +453,7 @@ function componentToHex(c) {
                 for (var j = 0; j < 5 && i*5 + j < images; j++) {
                     var z = URL.createObjectURL(imgInp.files[i*5 + j]);
                     var td = document.createElement("td");
-                    td.innerHTML="<img id=\"bruh"+(i*5 + j)+"\" width=\""+screen.width/6+"\" src=\""+z+"\"></img><input type=\"checkbox\" id=\"check"+(i*5 + j)+"\" checked>";
+                    td.innerHTML="<img id=\"bruh"+(i*5 + j)+"\" width=\""+screen.width/6+"\" src=\""+z+"\"></img><input onclick=\"cclick("+(i*5 + j)+")\" type=\"checkbox\" id=\"check"+(i*5 + j)+"\" checked>";
                     tr.appendChild(td);
                     
                     var c = document.createElement('canvas');
@@ -465,6 +468,18 @@ function componentToHex(c) {
 
 
         }
+	function cclick(i){
+	var f=i;
+	
+	if(pressedKeys[16]){
+	f++;
+	while($("#check"+f)[0]!=null){
+	$("#check"+f)[0].checked=$("#check"+i)[0].checked;
+	f++;
+	}
+	//alert(0);
+	}
+	}
 	function ccheck(){
 		filling = true;
 		$("#check")[0].style.background = "grey";
