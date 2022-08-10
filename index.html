@@ -44,6 +44,8 @@
     <table id="tabBar"></table>
 
     <script>
+	var prx=0;
+	var pry=0;
 	var cr=0;
 	var cg=0;
 	var cb=0;
@@ -61,13 +63,40 @@
         var select1x, select1y, select2x, select2y = 0;
 	var pressedKeys = {};
 	window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
-	window.onkeydown = function(e) { pressedKeys[e.keyCode] = true; }
+	window.onkeydown = function(e) { 
+	pressedKeys[e.keyCode] = true; 
+	if(pressedKeys[17] && e.keyCode== 67){copy();}
+	else if(pressedKeys[17] && e.keyCode==86){paste();}
+	else if(pressedKeys[17] && e.keyCode==88){remov();}
+	else if(pressedKeys[17] && e.keyCode==70){e.preventDefault();fill();}
+	else if(pressedKeys[17] && e.keyCode==80){            
+	e.preventDefault();
+	var rect = $("#pat")[0].getBoundingClientRect();
+	var ratx1 = (prx-rect.left) / rect.width;
+            var raty1 = (pry-rect.top) / rect.height;
+ 	    var firstc = $("#myCanvas")[0];
+            imageObj2.src = $("#pat")[0].src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+
+		var j = (imageData2.width*Math.floor(imageData2.height*raty1)+Math.floor(ratx1*imageData2.width))*4;
+		cr = imageData2.data[j+0];
+		cg = imageData2.data[j+1];
+		cb = imageData2.data[j+2];
+		ca = imageData2.data[j+3];
+		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);}
+
+	}
 	function change(){
 	if(changing==0){
 	changing=1;
 	$("#change")[0].style.background = "darkgrey";
 	}else {
-	$("#change")[0].style.background = "lightgray";
+	$("#change")[0].style.background = "#efefef";
 	changing=0;
 	}
 	}
@@ -266,8 +295,9 @@ function fill() {
         }
 
         document.onmousemove = function mouseEvent(e) {
+		prx = e.clientX; pry=e.clientY;
 		var rect = $("#pat")[0].getBoundingClientRect();
-	    if( (e.target.id=="selectorid" || e.target.id=="pat") && changing==2){
+	    if( (e.target.id=="selectorid" || e.target.id=="pat") && (changing==2 || pressedKeys[16])){
 		var selector = $("#selectorid")[0];
 		//alert(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX);
 		if(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX<rect.right && parseInt(selector.style.top,10)+parseInt(selector.style.height,10)+e.movementY<rect.bottom && parseInt(selector.style.top,10)+e.movementY>rect.top && parseInt(selector.style.left,10)+e.movementX>rect.left)
@@ -308,26 +338,20 @@ function componentToHex(c) {
 		if (e.target.id=="pat" || e.target.id=="selectorid"){
 	    if(changing>0){changing=2;}	
 	    else if(filling){
-	    //var rect1 = $("#selectorid")[0].getBoundingClientRect();
             var ratx1 = (e.clientX-rect.left) / rect.width;
             var raty1 = (e.clientY-rect.top) / rect.height;
-		
- 		var firstc = $("#myCanvas")[0];
+ 	    var firstc = $("#myCanvas")[0];
             imageObj2.src = $("#pat")[0].src;
             firstc.width = imageObj2.width;
             firstc.height = imageObj2.height;
             var firstx = firstc.getContext('2d');
             firstx.drawImage(imageObj2, 0, 0);
             var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
-            	
-		
 		var j = (imageData2.width*Math.floor(imageData2.height*raty1)+Math.floor(ratx1*imageData2.width))*4;
-	
 		cr = imageData2.data[j+0];
 		cg = imageData2.data[j+1];
 		cb = imageData2.data[j+2];
 		ca = imageData2.data[j+3];
-	
 		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);
 	
 
