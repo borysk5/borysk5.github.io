@@ -307,6 +307,17 @@ function fill() {
                 var n1 = parseInt(selector.style.top,10)+e.movementY + "px";
                 selector.style.top = n1;	
 		}	
+            }  else if( (e.target.id=="selectorid" || e.target.id=="pat") && (pressedKeys[17])){
+		var selector = $("#selectorid")[0];
+		//alert(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX);
+		if(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX<rect.right && parseInt(selector.style.top,10)+parseInt(selector.style.height,10)+e.movementY<rect.bottom && parseInt(selector.style.top,10)+e.movementY>rect.top && parseInt(selector.style.left,10)+e.movementX>rect.left)
+		{
+		if(Math.abs(e.movementX)>2*Math.abs(e.movementY)){
+                var n = parseInt(selector.style.left,10)+e.movementX + "px";
+                selector.style.left = n;}else if(Math.abs(e.movementY)>2*Math.abs(e.movementX)){
+                var n1 = parseInt(selector.style.top,10)+e.movementY + "px";
+                selector.style.top = n1;	}
+		}	
             }
             else if (!filling && moving && (e.target.id=="pat" || e.target.id=="selectorid")) {
                 var width = Math.abs(e.clientX - select1x - rect.left);
