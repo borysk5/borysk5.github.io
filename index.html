@@ -30,7 +30,7 @@
     <button onclick="shrink()">Shrink to rectangle</button><br>
     <button onclick="remov()">Remove the rectangle</button><br>
     <button onclick="fill()">Fill with color</button><button id="check" onclick="ccheck()">🎨</button><br>
-    <button id="change" onclick="change()">✦</button><button id="copy" onclick="copy()">⬜</button><button id="paste" onclick="paste()">⬛</button><br>
+    <button id="change" onclick="change()">✦</button><button id="copy" onclick="copy()">⬜C</button><button id="paste" onclick="paste()">⬛V</button><br>
     <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
         <input accept="image/*" type='file' id="imgInp" multiple>Upload multiple files</input>
@@ -374,6 +374,7 @@ function componentToHex(c) {
             var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
             var photo = $("#tabBar")[0];
             for (var i = 0; i < images; i++) {
+		if($("#check"+i)[0].checked){
                 imageObj.src = $("#bruh"+i)[0].src;
 		if(imageObj.width!=imageObj2.width || imageObj.height!=imageObj2.height){
 		alert("Error: One of provided images has different dimensions than pattern image");
@@ -399,6 +400,7 @@ function componentToHex(c) {
                 //imageData.data = data;
                 context.putImageData(imageData, 0, 0);
                 $("#bruh"+i)[0].src = canvas.toDataURL();
+		}
             }
             $("#zip")[0].hidden = false;
             var zip = new JSZip();
@@ -448,7 +450,7 @@ function componentToHex(c) {
                 for (var j = 0; j < 5 && i*5 + j < images; j++) {
                     var z = URL.createObjectURL(imgInp.files[i*5 + j]);
                     var td = document.createElement("td");
-                    td.innerHTML="<img id=\"bruh"+(i*5 + j)+"\" width=\""+screen.width/6+"\" src=\""+z+"\"></img>";
+                    td.innerHTML="<img id=\"bruh"+(i*5 + j)+"\" width=\""+screen.width/6+"\" src=\""+z+"\"></img><input type=\"checkbox\" id=\"check"+(i*5 + j)+"\" checked>";
                     tr.appendChild(td);
                     
                     var c = document.createElement('canvas');
