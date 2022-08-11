@@ -29,7 +29,7 @@
     (click on the image to select part of it)<br>
     <button onclick="shrink()">Shrink to rectangle</button><br>
     <button onclick="remov()">Remove the rectangle</button><br>
-    <button onclick="fill()">Fill with color</button><button id="check" onclick="ccheck()">🎨</button><br>
+    <button onclick="fill()">Fill with color</button><button id="check" style="background:white" onclick="ccheck()">🎨</button>R:<input type="text" size="1" oninput="update()" value="255" id="rc">G:<input type="text" oninput="update()" size="1" value="255" id="gc">B:<input type="text" oninput="update()" value="255" size="1" id="bc"><br>
     <button id="change" onclick="change()">✦</button><button id="copy" onclick="copy()">⬜C</button><button id="paste" onclick="paste()">⬛V</button><br>
     <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
@@ -46,10 +46,10 @@
     <script>
 	var prx=0;
 	var pry=0;
-	var cr=0;
-	var cg=0;
-	var cb=0;
-	var ca=0;
+	var cr=255;
+	var cg=255;
+	var cb=255;
+	var ca=255;
 	var remx=0;
 	var remy=0;
 	var datax=[];
@@ -69,6 +69,43 @@
 	else if(pressedKeys[17] && e.keyCode==86){paste();}
 	else if(pressedKeys[17] && e.keyCode==88){remov();}
 	else if(pressedKeys[17] && e.keyCode==70){e.preventDefault();fill();}
+	else if(pressedKeys[17] && e.keyCode==81){ 
+			var rect = $("#pat")[0].getBoundingClientRect();
+	var ratx1 = (prx-rect.left) / rect.width;
+            var raty1 = (pry-rect.top) / rect.height;
+ 	    var firstc = $("#myCanvas")[0];
+            imageObj2.src = $("#pat")[0].src;
+            firstc.width = imageObj2.width;
+            firstc.height = imageObj2.height;
+            var firstx = firstc.getContext('2d');
+            firstx.drawImage(imageObj2, 0, 0);
+
+            var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+		var mx = Math.floor(ratx1*imageData2.width);
+		var my = Math.floor(imageData2.height*raty1);
+		var j = (imageData2.width*my+mx)*4;
+		var myr = imageData2.data[j+0];
+		var myg = imageData2.data[j+1];
+		var myb = imageData2.data[j+2];
+		if( Math.abs(cr-myr)+Math.abs(cg-myg)+Math.abs(cb-myb)<20 ) return;
+		var mg = [];
+		mg[0] = j;
+		while(mg.length>0){
+			j=mg.shift();
+			if(j>=0 && j+4<imageData2.data.length && Math.abs(imageData2.data[j+0]-myr)+Math.abs(imageData2.data[j+1]-myg)+Math.abs(imageData2.data[j+2]-myb)<20){
+		imageData2.data[j+0]=cr;
+		imageData2.data[j+1]=cg;
+		imageData2.data[j+2]=cb;
+		imageData2.data[j+3]=ca;
+		mg.push(j+4); mg.push(j-4); 
+		mg.push(j+imageData2.width*4); mg.push(j-imageData2.width*4);
+			}
+
+		}
+
+		firstx.putImageData(imageData2, 0, 0);
+                $("#pat")[0].src = firstc.toDataURL();
+	}
 	else if(pressedKeys[17] && e.keyCode==80){            
 	e.preventDefault();
 	var rect = $("#pat")[0].getBoundingClientRect();
@@ -88,7 +125,22 @@
 		cg = imageData2.data[j+1];
 		cb = imageData2.data[j+2];
 		ca = imageData2.data[j+3];
+		$("#rc")[0].value = imageData2.data[j+0];
+		$("#gc")[0].value = imageData2.data[j+1];
+		$("#bc")[0].value = imageData2.data[j+2];
 		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);}
+
+	}
+	function update(){
+		$("#rc")[0].value=Math.min($("#rc")[0].value,255);
+		$("#gc")[0].value=Math.min($("#gc")[0].value,255);
+		$("#bc")[0].value=Math.min($("#bc")[0].value,255);
+		cr = parseInt($("#rc")[0].value);
+		cg = parseInt($("#gc")[0].value);
+		cb = parseInt($("#bc")[0].value);
+		ca = 255;
+		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);
+
 
 	}
 	function change(){
@@ -312,9 +364,9 @@ function fill() {
 		//alert(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX);
 		if(parseInt(selector.style.left,10)+parseInt(selector.style.width,10)+e.movementX<rect.right && parseInt(selector.style.top,10)+parseInt(selector.style.height,10)+e.movementY<rect.bottom && parseInt(selector.style.top,10)+e.movementY>rect.top && parseInt(selector.style.left,10)+e.movementX>rect.left)
 		{
-		if(Math.abs(e.movementX)>2*Math.abs(e.movementY)){
+		if(Math.abs(e.movementX)>3*Math.abs(e.movementY)){
                 var n = parseInt(selector.style.left,10)+e.movementX + "px";
-                selector.style.left = n;}else if(Math.abs(e.movementY)>2*Math.abs(e.movementX)){
+                selector.style.left = n;}else if(Math.abs(e.movementY)>3*Math.abs(e.movementX)){
                 var n1 = parseInt(selector.style.top,10)+e.movementY + "px";
                 selector.style.top = n1;	}
 		}	
@@ -363,6 +415,9 @@ function componentToHex(c) {
 		cg = imageData2.data[j+1];
 		cb = imageData2.data[j+2];
 		ca = imageData2.data[j+3];
+		$("#rc")[0].value = imageData2.data[j+0];
+		$("#rg")[0].value = imageData2.data[j+1];
+		$("#rb")[0].value = imageData2.data[j+2];
 		$("#check")[0].style.background = "#" + componentToHex(cr) + componentToHex(cg) + componentToHex(cb);
 	
 
