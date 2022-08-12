@@ -27,11 +27,26 @@
         <input accept="image/*" type='file' id="pattern"></input>
     </form>
     <button onclick="magnify(1)">🔍-</button><button onclick="magnify(0)">🔎+</button><br>
-    <img id="pat" style="background-image: url('https://t3.ftcdn.net/jpg/04/21/50/96/360_F_421509616_AW4LfRfbYST8T2ZT9gFGxGWfrCwr4qm4.jpg'); border: 1px solid black" src="https://upload.wikimedia.org/wikipedia/commons/3/38/Solid_white_bordered.png" alt="your image" />
-    <div style="display:block;position: absolute;border: 1px solid #999999;height:100px;top:80;left:0" id="selectorid"></div><br> (click on the image to select part of it)<br>
+    <img draggable="false" id="pat" style="background-image: url('https://t3.ftcdn.net/jpg/04/21/50/96/360_F_421509616_AW4LfRfbYST8T2ZT9gFGxGWfrCwr4qm4.jpg'); border: 1px solid black" src="https://upload.wikimedia.org/wikipedia/commons/3/38/Solid_white_bordered.png" alt="your image" />
+    <div style="display:block;position: absolute;border: 1px solid #999999;height:0px;top:0;left:0" id="selectorid"></div><br> (click on the image to select part of it)<br>
     <button onclick="shrink()">Shrink to rectangle</button><br>
     <button onclick="remov()">Remove the rectangle</button><br>
-    <button onclick="fill()">Fill with color</button><button id="check" style="background:white" onclick="ccheck()">🎨</button>R:<input type="text" size="1" oninput="update()" value="255" id="rc">G:<input type="text" oninput="update()" size="1" value="255" id="gc">B:<input type="text" oninput="update()" value="255" size="1" id="bc"><br>
+    <button onclick="fill()">Fill with color</button><button id="check" style="background:white" onclick="ccheck()">🎨</button>R:<input type="text" style="width:22px" oninput="update()" value="255" id="rc">G:<input type="text" oninput="update()" style="width:22px" value="255" id="gc">B:<input type="text" oninput="update()" value="255" style="width:22px" id="bc">
+    <button id="brush" onclick="brush()">🖌️</button><br>
+    <button style="height: 20px; width:20px; background: white" onclick="choosecolor(255,255,255)"></button>
+    <button style="height: 20px; width:20px; background: black" onclick="choosecolor(0,0,0)"></button>
+    <button style="height: 20px; width: 20px; background: #7A7A7A" onclick="choosecolor(122,122,122)"></button>
+    <button style="height: 20px; width: 20px; background: #22b14c" onclick="choosecolor(34,177,76)"></button>
+    <button style="height: 20px; width: 20px; background: #00a2e8" onclick="choosecolor(0,162,232)"></button>
+    <button style="height: 20px; width: 20px; background: #ff7f27" onclick="choosecolor(255,127,39)"></button>
+    <br>
+    <button style="height: 20px; width: 20px; background: #ffaec9" onclick="choosecolor(255,174,201)"></button>
+    <button style="height: 20px; width: 20px; background: #ed1c24" onclick="choosecolor(237,28,36)"></button>
+    <button style="height: 20px; width: 20px; background: #fff200" onclick="choosecolor(255,242,0)"></button>
+    <button style="height: 20px; width: 20px; background: #a349a4" onclick="choosecolor(163,73,164)"></button>
+    <button style="height: 20px; width: 20px; background: #b97a57" onclick="choosecolor(185,122,87)"></button>
+    <button style="height: 20px; width: 20px; background: #b5e61d" onclick="choosecolor(181,230,29)"></button>
+    <br>
     <button id="change" onclick="change()">✦</button><button id="copy" onclick="copy()">⬜C</button><button id="paste" onclick="paste()">⬛V</button><br>
     <a style="font-size:30px"><b>Second step:</b> Upload multiple files to add the pattern on top of them (all must have equal size to pattern file)</a>
     <form>
@@ -40,15 +55,15 @@
     <a style="font-size:30px"><b>Third step:</b> Click this button to process images:</a> <button onclick="doThis()">Process images</button><br>
 
     <a id="zip" hidden href="" download="images.zip">
-      <button>Download all images</button> 
+        <button>Download all images</button>
     </a>
 
     <table id="tabBar"></table>
 
     <script>
-        var pr = [0,0];
-        var cs = [255,255,255,255];
-        var rem = [0,0];
+        var pr = [0, 0];
+        var cs = [255, 255, 255, 255];
+        var rem = [0, 0];
         var datax = [];
         var files;
         var images = 0;
@@ -56,14 +71,17 @@
         var imageObj2 = new Image();
         var moving = false;
         var changing = 0;
+        var brushing = 0;
         var filling = false;
         var select1 = [0, 0];
         var pressedKeys = {};
-        window.onkeyup = function(e) {
+        window.onkeyup = function (e) {
+            document.body.style.cursor = "default";
             pressedKeys[e.keyCode] = false;
         }
-        window.onkeydown = function(e) {
-	if(e.keyCode==9) {e.preventDefault();}
+        window.onkeydown = function (e) {
+            if (e.keyCode == 9) { e.preventDefault(); document.body.style.cursor = "move"; } //tab
+            else if (e.keyCode == 16) { document.body.style.cursor = "move"; }
             pressedKeys[e.keyCode] = true;
             if (pressedKeys[17] && e.keyCode == 67) {
                 copy();
@@ -74,7 +92,7 @@
             } else if (pressedKeys[17] && e.keyCode == 70) {
                 e.preventDefault();
                 fill();
-            } else if (pressedKeys[17] && e.keyCode == 65) {
+            } else if (pressedKeys[17] && e.keyCode == 65) { //ctrl+a
                 e.preventDefault();
                 var rect = $("#pat")[0].getBoundingClientRect();
                 var selector = $("#selectorid")[0];
@@ -82,7 +100,7 @@
                 selector.style.top = rect.top - document.body.getBoundingClientRect().top + "px";
                 selector.style.width = rect.width + "px";
                 selector.style.height = rect.height + "px";
-            } else if (pressedKeys[17] && e.keyCode == 81) {
+            } else if (pressedKeys[17] && e.keyCode == 81) { //ctrl+q (flood fill)
                 var rect = $("#pat")[0].getBoundingClientRect();
                 var rect1 = $("#selectorid")[0].getBoundingClientRect();
                 var ratx1 = (pr[0] - rect.left) / rect.width;
@@ -114,7 +132,7 @@
                 var cha = new Array(imageData2.data.length / 4).fill(0);
                 mg[0] = j;
                 if (pr[0] > $("#selectorid")[0].getBoundingClientRect().left && pr[0] < $("#selectorid")[0].getBoundingClientRect().right && pr[1] > $("#selectorid")[0].getBoundingClientRect().top && pr[1] < $("#selectorid")[0].getBoundingClientRect().bottom) {
-			
+
                     while (mg.length > 0) {
                         j = mg.shift();
                         var posy = Math.floor((j / 4) / imageData2.width);
@@ -132,10 +150,9 @@
                                 cha[j / 4] = 1;
                             }
                         }
-                    } 
+                    }
                 }
-                else
-                {
+                else {
                     while (mg.length > 0) {
                         j = mg.shift();
 
@@ -155,7 +172,7 @@
 
                 firstx.putImageData(imageData2, 0, 0);
                 $("#pat")[0].src = firstc.toDataURL();
-            } else if (pressedKeys[17] && e.keyCode == 80) {
+            } else if (pressedKeys[17] && e.keyCode == 80) { //ctrl+p (probe color)
                 e.preventDefault();
                 var rect = $("#pat")[0].getBoundingClientRect();
                 var ratx1 = (pr[0] - rect.left) / rect.width;
@@ -181,7 +198,31 @@
             }
 
         }
+        function choosecolor(a, b, c) {
+            cs[0] = a;
+            cs[1] = b;
+            cs[2] = c;
+            cs[3] = 266;
+            $("#rc")[0].value = a;
+            $("#gc")[0].value = b;
+            $("#bc")[0].value = c;
+            $("#check")[0].style.background = "#" + componentToHex(cs[0]) + componentToHex(cs[1]) + componentToHex(cs[2]);
 
+        }
+        function brush() {
+            if (brushing == 0) {
+                document.body.style.cursor = "url('https://www.cursor.cc/cursor/477/6/cursor.png'),default";
+                brushing = 1;
+                $("#brush")[0].style.background = "darkgrey";
+                filling = false;
+                $("#check")[0].style.background = "#" + componentToHex(cs[0]) + componentToHex(cs[1]) + componentToHex(cs[2]);
+            } else {
+                document.body.style.cursor = "default";
+                $("#brush")[0].style.background = "#efefef";
+                brushing = 0;
+            }
+
+        }
         function update() {
             $("#rc")[0].value = Math.min($("#rc")[0].value, 255);
             $("#gc")[0].value = Math.min($("#gc")[0].value, 255);
@@ -276,9 +317,6 @@
             var rect1 = $("#selectorid")[0].getBoundingClientRect();
             var ratx1 = (rect1.left - rect.left) / rect.width;
             var raty1 = (rect1.top - rect.top) / rect.height;
-
-            var ratx2 = (rect1.right - rect.left) / rect.width;
-            var raty2 = (rect1.bottom - rect.top) / rect.height;
 
             var firstc = $("#myCanvas")[0];
             imageObj2.src = $("#pat")[0].src;
@@ -376,7 +414,32 @@
             pr[0] = e.clientX;
             pr[1] = e.clientY;
             var rect = $("#pat")[0].getBoundingClientRect();
-            if ((e.target.id == "selectorid" || e.target.id == "pat") && (changing == 2 || pressedKeys[16])) {
+            if (brushing == 2) {
+                var ratx1 = (pr[0] - rect.left) / rect.width;
+                var raty1 = (pr[1] - rect.top) / rect.height;
+                var firstc = $("#myCanvas")[0];
+                imageObj2.src = $("#pat")[0].src;
+                firstc.width = imageObj2.width;
+                firstc.height = imageObj2.height;
+                var firstx = firstc.getContext('2d');
+                firstx.drawImage(imageObj2, 0, 0);
+
+                var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+
+                var h = (imageData2.width * Math.floor(imageData2.height * raty1) + Math.floor(ratx1 * imageData2.width)) * 4;
+                for (var k of [-2, -1, 0, 1, 2]) {
+                    for (var j of [-2, -1, 0, 1, 2]) {
+                        for (var i of [0, 1, 2, 3]) {
+                            imageData2.data[h + (j + k * imageData2.width) * 4 + i] = cs[i];
+                        }
+                    }
+                }
+                firstx.putImageData(imageData2, 0, 0);
+                $("#pat")[0].src = firstc.toDataURL();
+
+
+            }
+            else if ((e.target.id == "selectorid" || e.target.id == "pat") && (changing == 2 || pressedKeys[16])) { //shift
                 var selector = $("#selectorid")[0];
                 if (e.clientX + parseInt(selector.style.width) / 2 < rect.right && e.clientY + parseInt(selector.style.height) / 2 < rect.bottom && e.clientY - parseInt(selector.style.height) / 2 > rect.top && e.clientX - parseInt(selector.style.width) / 2 > rect.left) {
                     var n = e.clientX - document.body.getBoundingClientRect().left - parseInt(selector.style.width) / 2 + "px";
@@ -384,7 +447,7 @@
                     var n1 = e.clientY - document.body.getBoundingClientRect().top - parseInt(selector.style.height) / 2 + "px";
                     selector.style.top = n1;
                 }
-            } else if ((e.target.id == "selectorid" || e.target.id == "pat") && (pressedKeys[9])) {
+            } else if ((e.target.id == "selectorid" || e.target.id == "pat") && (pressedKeys[9])) { //tab
                 var selector = $("#selectorid")[0];
                 if (e.clientX + parseInt(selector.style.width) / 2 < rect.right && e.clientY + parseInt(selector.style.height) / 2 < rect.bottom && e.clientY - parseInt(selector.style.height) / 2 > rect.top && e.clientX - parseInt(selector.style.width) / 2 > rect.left) {
                     if (Math.abs(e.movementX) > 3 * Math.abs(e.movementY)) {
@@ -395,7 +458,7 @@
                         selector.style.top = n1;
                     }
                 }
-            } else if (!filling && moving && (e.target.id == "pat" || e.target.id == "selectorid")) {
+            } else if (!filling && moving && (e.target.id == "pat" || e.target.id == "selectorid")) { //zmiana polozenia selektora
                 var width = Math.abs(e.clientX - select1[0] - rect.left);
                 var height = Math.abs(e.clientY - select1[1] - rect.top);
 
@@ -423,33 +486,60 @@
         document.onmousedown = function mousedownEvent(e) {
             var rect = $("#pat")[0].getBoundingClientRect();
             if (e.target.id == "pat" || e.target.id == "selectorid") {
-                if (changing > 0) {
-                    changing = 2;
-                } else if (filling) {
-                    var ratx1 = (e.clientX - rect.left) / rect.width;
-                    var raty1 = (e.clientY - rect.top) / rect.height;
+                if (brushing == 1) {
+                    brushing = 2;
+                    var ratx1 = (pr[0] - rect.left) / rect.width;
+                    var raty1 = (pr[1] - rect.top) / rect.height;
                     var firstc = $("#myCanvas")[0];
                     imageObj2.src = $("#pat")[0].src;
                     firstc.width = imageObj2.width;
                     firstc.height = imageObj2.height;
                     var firstx = firstc.getContext('2d');
                     firstx.drawImage(imageObj2, 0, 0);
+
                     var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+
+                    var h = (imageData2.width * Math.floor(imageData2.height * raty1) + Math.floor(ratx1 * imageData2.width)) * 4;
+                    for (var k of [-2, -1, 0, 1, 2]) {
+                        for (var j of [-2, -1, 0, 1, 2]) {
+                            for (var i of [0, 1, 2, 3]) {
+                                imageData2.data[h + (j + k * imageData2.width) * 4 + i] = cs[i];
+                            }
+                        }
+                    }
+                    firstx.putImageData(imageData2, 0, 0);
+                    $("#pat")[0].src = firstc.toDataURL();
+                }
+                else if (changing > 0) {
+                    document.body.style.cursor = "move";
+                    changing = 2;
+                } else if (filling) {
+
+                    var rect = $("#pat")[0].getBoundingClientRect();
+                    var ratx1 = (pr[0] - rect.left) / rect.width;
+                    var raty1 = (pr[1] - rect.top) / rect.height;
+                    var firstc = $("#myCanvas")[0];
+                    imageObj2.src = $("#pat")[0].src;
+                    firstc.width = imageObj2.width;
+                    firstc.height = imageObj2.height;
+                    var firstx = firstc.getContext('2d');
+                    firstx.drawImage(imageObj2, 0, 0);
+
+                    var imageData2 = firstx.getImageData(0, 0, imageObj2.width, imageObj2.height);
+
                     var j = (imageData2.width * Math.floor(imageData2.height * raty1) + Math.floor(ratx1 * imageData2.width)) * 4;
                     cs[0] = imageData2.data[j + 0];
                     cs[1] = imageData2.data[j + 1];
                     cs[2] = imageData2.data[j + 2];
                     cs[3] = imageData2.data[j + 3];
                     $("#rc")[0].value = imageData2.data[j + 0];
-                    $("#rg")[0].value = imageData2.data[j + 1];
-                    $("#rb")[0].value = imageData2.data[j + 2];
+                    $("#gc")[0].value = imageData2.data[j + 1];
+                    $("#bc")[0].value = imageData2.data[j + 2];
                     $("#check")[0].style.background = "#" + componentToHex(cs[0]) + componentToHex(cs[1]) + componentToHex(cs[2]);
-
 
                 } else {
                     moving = true;
-                    var rect = $("#pat")[0].getBoundingClientRect();
-
+                    document.body.style.cursor = "crosshair";
                     select1[1] = e.clientY - rect.top;
                     select1[0] = e.clientX - rect.left;
                     var selector = $("#selectorid")[0];
@@ -469,14 +559,16 @@
 
         document.onmouseup = function mouseupEvent(e) {
             if (changing == 2) {
+                document.body.style.cursor = "default";
                 changing = 1;
             } else if (filling) {
                 filling = false;
+                document.body.style.cursor = "default";
             } else if (moving == true) {
                 moving = false;
-
+                document.body.style.cursor = "default";
             }
-
+            if (brushing == 2) { brushing = 1; }
         }
 
         function doThis() {
@@ -526,7 +618,7 @@
 
             zip.generateAsync({
                 type: "base64"
-            }).then(function(content) {
+            }).then(function (content) {
                 $("#zip")[0].href = "data:application/zip;base64," + content;
 
             });
@@ -535,8 +627,8 @@
 
 
         function getCanvasBlob(canvas) {
-            return new Promise(function(resolve, reject) {
-                canvas.toBlob(function(blob) {
+            return new Promise(function (resolve, reject) {
+                canvas.toBlob(function (blob) {
                     resolve(blob)
                 })
             })
@@ -592,6 +684,9 @@
         function ccheck() {
             filling = true;
             $("#check")[0].style.background = "grey";
+            document.body.style.cursor = "default";
+            $("#brush")[0].style.background = "#efefef";
+            brushing = 0;
         }
 
         function magnify(i) {
